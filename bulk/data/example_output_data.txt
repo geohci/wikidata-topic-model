@@ -1,0 +1,3 @@
+{"QID": "Q48976920", "title": "Minnesota Food Cooperative Wars", "labels": [["Geography.Americas", 0.6224693655967712]]}
+{"QID": "Q5307487", "title": "Driftless_Area", "labels": [["Geography.Americas", 0.7826725244522095]]}
+{"QID": "Q3758978", "title": "Loon", "labels": [["STEM.Biology", 0.9937201142311096]]}
