@@ -23,7 +23,16 @@ Append the `debug` parameter for additional output including all of the topics a
 
 http://127.0.0.1:5000/api/v1/wikidata/topic?qid=Q72334&debug
 
+## Running the bulk Wikidata script
+This script takes in a file with JSON objects containing the wikidata IDs to query (and any additional metadata) and outputs these JSONs with the predicted labels. Example input / output data is provided in the `bulk/data` folder.
 
+```
+cd bulk
+python3 wikidata_ids_to_topics.py --help
+python3 wikidata_ids_to_topics.py
+```
+NOTE: like the app, you must have the fastText Python module installed.
+See https://fasttext.cc/docs/en/support.html for how to install.
 
 ## See Also
 https://meta.wikimedia.org/wiki/Research_talk:Characterizing_Wikipedia_Reader_Behaviour/Demographics_and_Wikipedia_use_cases/Work_log/2019-09-11
