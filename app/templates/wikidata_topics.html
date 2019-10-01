@@ -18,15 +18,18 @@
        <tr>
          <th>Topic</th>
          <th>Score</th>
+         <th>Explanation</th>
        </tr>
-       {% for t,s in topics %}
+       {% for t,s,e in topics %}
          <tr>
          {% if s >= 0.5 %}
            <td class="above-threshold">{{t}}</td>
            <td class="above-threshold">{{s}}</td>
+           <td class="above-threshold">{{e}}</td>
          {% else %}
            <td class="below-threshold">{{t}}</td>
            <td class="below-threshold">{{s}}</td>
+           <td class="below-threshold">{{e}}</td>
          {% endif %}
          </tr>
        {% endfor %}
