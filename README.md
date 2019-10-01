@@ -11,7 +11,7 @@ NOTE: you must have the fastText Python module installed.
 See https://fasttext.cc/docs/en/support.html for how to install.
 
 ### Querying Wikidata items
-Queries can be made via the browser. For example, for [Toni Morrison](https://www.wikidata.org/wiki/Q72334):
+After starting the app as described above, queries can be made via the browser. For example, for [Toni Morrison](https://www.wikidata.org/wiki/Q72334):
 
 http://127.0.0.1:5000/api/v1/wikidata/topic?qid=Q72334
 
@@ -22,6 +22,9 @@ http://127.0.0.1:5000/api/v1/wikidata/topic?qid=Q72334&threshold=0.1
 Append the `debug` parameter for additional output including all of the topics and scores and the Wikidata claims processed by the model:
 
 http://127.0.0.1:5000/api/v1/wikidata/topic?qid=Q72334&debug
+
+### Adding LIME explanations
+To get a sense of why the model is making the predictions it is, you can enable explanations for each prediction. The explanations are made via LIME (https://github.com/marcotcr/lime) and indicate the best guess around which Wikidata properties / values were most influential in making the prediction for that label. It can slow down the processing, so they are off by default. To turn them on, simply set the `PROVIDE_EXPLANATIONS` variable in `app.py` to `True` and restart the app (`Ctrl+C` and then rerun `python3 app.py`).
 
 ## Running the bulk Wikidata script
 This script takes in a file with JSON objects containing the wikidata IDs to query (and any additional metadata) and outputs these JSONs with the predicted labels. Example input / output data is provided in the `bulk/data` folder.
