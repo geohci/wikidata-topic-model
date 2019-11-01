@@ -37,8 +37,7 @@ def main():
         traceback.print_exc()
         return
 
-    session = mwapi.Session('https://www.wikidata.org',
-                            user_agent='wikidata topic app -- isaac@wikimedia.org')
+    session = mwapi.Session('https://www.wikidata.org', user_agent='wikidata topic app -- isaac@wikimedia.org')
 
     items_processed = 0
     items_skipped = 0
@@ -93,6 +92,8 @@ def label_qids(wd_items_to_query, session, model, threshold=0.5):
 
     for entity in result['entities']:
         qid = result['entities'][entity]['id']
+        if 'redirects' in result['entities'][entity]:
+            qid = result['entities'][entity]['redirects']['from']
         # convert claims to fastText bag-of-words format
         claims = result['entities'][entity]['claims']
         claims_tuples = []
