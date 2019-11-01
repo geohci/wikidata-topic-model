@@ -6,8 +6,9 @@ import mwapi
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
+CUSTOM_UA = 'wikidata topic app -- isaac@wikimedia.org'
 SESSION = mwapi.Session('https://www.wikidata.org',
-                        user_agent='wikidata topic app -- isaac@wikimedia.org')
+                        user_agent=CUSTOM_UA)
 FT_MODEL = fasttext.load_model('models/model.bin')
 
 PROVIDE_EXPLANATIONS = False
@@ -54,30 +55,60 @@ def adjust_topics_based_on_claims(topics, claims):
 @app.route('/api/v1/wikidata/topic', methods=['GET'])
 def get_topics():
     qid, threshold, debug = validate_api_args()
-    name, topics, claims = label_qid(qid, SESSION, FT_MODEL, threshold)
-    topics, claims = adjust_topics_based_on_claims(topics, claims)
-    if debug:
-        return render_template('wikidata_topics.html',
-                               qid=qid, claims=claims, topics=topics, name=name)
-    else:
-        topics = [{'topic':t[0], 'score':t[1], 'explanation':t[2]} for t in topics]
-        return jsonify(topics)
+    if validate_qid(qid):
+        name, topics, claims = label_qid(qid, SESSION, FT_MODEL, threshold)
+        topics, claims = adjust_topics_based_on_claims(topics, claims)
+        if debug:
+            return render_template('wikidata_topics.html',
+                                   qid=qid, claims=claims, topics=topics, name=name)
+        else:
+            topics = [{'topic':t[0], 'score':t[1], 'explanation':t[2]} for t in topics]
+            return jsonify(topics)
+    return jsonify({'Error':qid})
+
+
+def get_qid(title, lang, session=None):
+    if session is None:
+        session = mwapi.Session('https://{0}.wikipedia.org'.format(lang), user_agent=CUSTOM_UA)
+
+    try:
+        result = session.get(
+            action="query",
+            prop="pageprops",
+            ppprop='wikibase_item',
+            titles=title,
+            format='json',
+            formatversion=2
+        )
+    except Exception:
+        print("Failed:", title)
+        return "API call failed for {0}.wikipedia: {1}".format(lang, title)
+
+    try:
+        return result['query']['pages'][0]['pageprops'].get('wikibase_item', None)
+    except (KeyError, IndexError):
+        print("No results returned:", title)
+        return "Title does not exist in {0}: {1}".format(lang, title)
+
+def validate_qid(qid):
+    return re.match('^Q[0-9]+$', qid)
 
 def validate_api_args():
     if 'qid' in request.args:
         qid = request.args['qid'].upper()
+        if not validate_qid(qid):
+            qid = "Error: poorly formatted 'qid' field. {0} does not match 'Q#...'".format(qid)
+    elif 'en_title' in request.args:
+        qid = get_qid(request.args['en_title'], lang='en')
     else:
-        return "Error: no 'qid' field provided. Please specify."
-
-    if not re.match('^Q[0-9]+$', qid):
-        return "Error: poorly formatted 'qid' field. {0} does not match 'Q#...'".format(qid)
+        qid = "Error: no 'qid' or 'en_title' field provided. Please specify."
 
     threshold = 0.5
     if 'threshold' in request.args:
         try:
             threshold = float(request.args['threshold'])
         except ValueError:
-            return "Error: threshold value provided not a float: {0}".format(request.args['threshold'])
+            threshold = "Error: threshold value provided not a float: {0}".format(request.args['threshold'])
 
     debug = False
     if 'debug' in request.args:
