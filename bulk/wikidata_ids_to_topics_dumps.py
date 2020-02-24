@@ -7,6 +7,10 @@ import traceback
 
 import fasttext
 
+# male; transgender male; male organisms; transmasculine; cisgender male
+SEX_OR_GENDER_MALE = ('Q6581097', 'Q2449503', 'Q44148', 'Q27679766', 'Q15145778')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--fasttext_model",
@@ -58,7 +62,7 @@ def main():
     with bz2.open(args.output_results, 'wt') as fout:
         if args.threshold > 0:
             print("Only providing labels with probability >= {0}".format(args.threshold))
-        for qid, titles, claims_str, disamb_list, has_coords, human in loop_through_wd_dump(
+        for qid, titles, claims_str, disamb_list, has_coords, man in loop_through_wd_dump(
                 qids=wd_items_to_query, sites=args.wiki_filter):
             items_processed += 1
             # make prediction
@@ -68,11 +72,11 @@ def main():
             if disamb_list:
                 # identify disambiguation pages and lists explicitly
                 results['Compilation.List_Disambig'] = 1
-            if human:
-                # language/literature should not include people (just actual biographies)
-                l = '__label__Culture.Language_and_literature'
-                results[l] = max(0, results[l] - 0.501)
-                results['Person'] = 1
+            if man:
+                # women's biographies should not have any biographies of men (per Wikidata) at default threshold (0.5)
+                l = '__label__Culture.Biography.Women'
+                results[l] = min(0.49, results[l])
+
             if not has_coords:
                 # geography should only be applied to topics w/ actual physical locations
                 geo_keys = [k for k in results if k.startswith('__label__Geography')]
@@ -151,6 +155,7 @@ def loop_through_wd_dump(qids=None, sites=None):
             disamb_list = False
             has_coords = False
             human = False
+            man = False
             claims = item_json.get('claims', {})
             claim_tuples = []
             for property in claims:  # each property, such as P31 instance-of
@@ -166,6 +171,9 @@ def loop_through_wd_dump(qids=None, sites=None):
                                     disamb_list = True
                                 elif val == 'Q5':
                                     human = True
+                            elif property == 'P21':
+                                if val in SEX_OR_GENDER_MALE:
+                                    man = True
                     except Exception:
                         indexerror += 1
                 if not included:
@@ -176,7 +184,8 @@ def loop_through_wd_dump(qids=None, sites=None):
                         disamb_list = True
             if not len(claim_tuples):
                 claim_tuples = [('<NOCLAIM>',)]
-            yield qid, titles, tuple_to_ft_format(claim_tuples), disamb_list, has_coords, human
+            yield qid, titles, tuple_to_ft_format(claim_tuples), disamb_list, has_coords, human and man
+
 
 if __name__ == "__main__":
     main()
